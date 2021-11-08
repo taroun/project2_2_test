@@ -123,7 +123,7 @@ def view_seconds(image_list):
     #객체를 반드시 종료시켜주어야 한다
     video.release()
     #모든 화면 종료해준다.
-    cv2.destroyAllWindows()
+    #cv2.destroyAllWindows()
 
     #영상 저장 위치 반환
     return video_name
