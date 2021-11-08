@@ -1,4 +1,0 @@
-django-bootstrap4==21.1
-easyocr==1.4.1
-opencv-python==4.5.4.58
-Pillow==8.2.0
