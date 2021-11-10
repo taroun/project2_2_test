@@ -16,6 +16,14 @@ pip install opencv-python
 
 pip install easyocr
 
+conda install cudatoolkit
+
+conda install cudnn
+
+pip install tensorflow-gpu
+
+conda install pytorch torchvision cudatoolkit=11.3.1 -c pytorch
+
 설치
 
 media 폴더에 ani 폴더 생성해주기

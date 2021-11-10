@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 #충돌 오류 때문에 기록...
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

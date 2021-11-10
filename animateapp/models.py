@@ -1,12 +1,9 @@
 from django.core.validators import FileExtensionValidator
 from django.db import models
 
-# Create your models here.
-
 
 class Animate(models.Model):
-    #맨처음 이미지 저장
-    image = models.ImageField(upload_to='ani_image/', null=True)
+    image = models.ImageField(upload_to='ani_image/', null=True, blank=True)
     #만화책 방향이 좌->우 인지 우->좌 인지 확인
     left_right_choice = (('좌', '좌->우'), ('우', '우->좌'))
     left_right = models.CharField(max_length=5, choices=left_right_choice, default='좌')
@@ -18,5 +15,10 @@ class Animate(models.Model):
                            blank=True)
     #생성일자
     created_at = models.DateField(auto_now_add=True, null=True)
+
+
+class AnimateImage(models.Model):
+    animate = models.ForeignKey(Animate, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='ani_image/', null=True)
 
 
