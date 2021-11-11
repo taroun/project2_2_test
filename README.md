@@ -28,6 +28,8 @@ conda install pytorch torchvision cudatoolkit=11.3.1 -c pytorch
 
 media 폴더에 ani 폴더 생성해주기
 
+최상위 폴더에 model 생성하고  모델 넣어주기
+
 python manage.py makemigrations
 
 python manage.py migrate
