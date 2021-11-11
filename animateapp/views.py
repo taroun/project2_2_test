@@ -79,13 +79,13 @@ def split_cut(img, polygon):
     cv2.bitwise_not(bg, bg, mask=mask)
     cut = bg + dst
 
-    width = 410
-    height = 500
-    back_image = np.ones((width, height, 3), np.uint8)*255
+    height = 650
+    width = 450
+    back_image = np.ones((height, width, 3), np.uint8)*255
     cols, rows, channel = cut.shape
-    space_width = int((width - cols) / 2)
-    space_height = int((height - rows) / 2)
-    back_image[space_width:space_width + cols, space_height:space_height + rows] = cut
+    space_height = int((height - cols) / 2)
+    space_width = int((width - rows) / 2)
+    back_image[space_height:space_height + cols, space_width:space_width + rows] = cut
 
     return back_image
 
