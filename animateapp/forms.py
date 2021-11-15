@@ -11,7 +11,7 @@ class AnimateForm(ModelForm):
         widgets = {
             # 생성시 안보이게 처리
             'ani': HiddenInput(),
-            'image': forms.ClearableFileInput(attrs={'multiple': True})
+            'image': forms.ClearableFileInput(attrs={'multiple': True}),
         }
         labels = {
             #생성시 라벨 변경

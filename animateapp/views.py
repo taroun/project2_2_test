@@ -1,5 +1,6 @@
 import datetime
 
+import torch.cuda
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import CreateView, DetailView
@@ -13,6 +14,8 @@ from PIL import Image
 import cv2.cv2 as cv2
 from tensorflow.python.keras.models import load_model
 import numpy as np
+import base64
+import gc
 
 #충돌 오류 때문에 기록...
 import os
@@ -34,23 +37,24 @@ class AnimateCreateView(CreateView):
         animate.save()
         if form.is_valid():
             image_list = []
-            full_list = []
             for f in files:
                 l_r = str(form.instance.left_right)
-                animate_image = AnimateImage(animate=animate, image=f)
+                animate_image = AnimateImage(animate=animate, image=f, image_base64="")
+                animate_image.save()
+                path = 'media/' + str(animate_image.image)
+                with open(path, 'rb') as img:
+                    base64_string = base64.b64encode(img.read())
+                    tmp = str(base64_string)[2:-1]
+                animate_image.image_base64 = tmp
                 animate_image.save()
                 im = Image.open(f)
                 img_array = np.array(im)
                 image_list.append(img_array)
 
             cuts = make_cut(image_list)
-            print(len(cuts))
             image_len_list = image_len(cuts)
-            full_list.extend(image_len_list)
 
-            video_path = view_seconds(full_list)
-            # video_list = view_seconds(full_list)
-            # video_path = effect_video(video_list)
+            video_path = view_seconds(image_len_list)
             animate = form.save(commit=False)
             animate.ani = video_path
             animate.save()
@@ -133,7 +137,9 @@ def make_cut(img_list):
         background = np.full(label.shape, 255, dtype=np.uint8)
         polygons = [contour.reshape(contour.shape[0], 2) for contour in contours]
         for polygon in polygons:
-            cuts.append(split_cut(img_list[idx], polygon))
+            x, y, w, h = cv2.boundingRect(polygon)
+            if w > 50:
+                cuts.append(split_cut(img_list[idx], polygon))
     return cuts
 
 
@@ -151,18 +157,20 @@ def image_len(cut_list):
 
 #인식률이 좋은 easyocr버전 이미지 받아 글자수 반환해주는 함수
 def img_text_easyocr(img):
-    # image = Image.fromarray(np.uint8(cm.plasma(img) * 255))
-    # img_resize = image.resize((int(image.width / 2), int(image.height / 2)))
+    gc.collect()
+    torch.cuda.empty_cache()
+    print(img.shape)
+    img_result = cv2.resize(img, (int(img.shape[1]/2), int(img.shape[0]/2)), interpolation=cv2.INTER_CUBIC)
     #인식 언어 설정
-    reader = easyocr.Reader(['ko', 'en'], gpu=False)
+    reader = easyocr.Reader(['ko', 'en'])
     #이미지를 받아 문자열 리스트를 반환해줌
-    result = reader.readtext(img, detail=0)
+    result = reader.readtext(img_result, detail=0)
     #리스트 원소 합쳐서 문자여 총 길이 확인
     text_result = " ".join(result)
     text_result_len = len(text_result)
-    print("길이:" + str(len(text_result)))
-    print(text_result)
     #문자열 길이 반환
+    print("길이"+str(text_result_len))
+    print(text_result)
     return text_result_len
 
 
@@ -175,148 +183,62 @@ def view_seconds(image_list):
     video_name = 'ani/' + daytime + '.mp4'
     out_path = 'media/' + video_name
     # video codec 설정
-    fourcc = cv2.VideoWriter_fourcc(*'H264')
+    fourcc = cv2.VideoWriter_fourcc(*'AVC1')
 
     # 현재 영상 프레임을 첫번째이미지로 설정(변경가능)
     frame = image_list[0][0]
     height, width, layers = frame.shape
 
     # video작성부분(저장위치, codec, fps, 영상프레임)
-    video = cv2.VideoWriter(out_path, fourcc, 10.0, (width, height))
+    fps = 24.0
+    video = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
     # 리스트에서 한 cut씩 가져옮
-    for image in image_list:
+    for i, image in enumerate(image_list):
+        # wid, hei = 1280, 720
+        # image_hei, image_wid = image.shape[:2]
+        # img_result = cv2.resize(cut, (1100, (1100/image_wid) * image_hei), interpolation = cv2.INTER_CUBIC)
+        # sr = cv2.dnn_superres.DnnSuperResImpl_create()
+        # sr.readModel('models/EDSR_x3.pb')
+        # sr.setModel('edsr', 3)
+        # result = sr.upsample(img_result)
+
+        # back_image = np.ones((hei, wid, 3), np.uint8) * 255
+        # cols, rows, channel = result.shape
+        # space_width = int((wid - rows) / 2)
+
         # 기본 5초에 이미지의 글자수를 10으로 나눈만큼 반복하여 같은 이미지 기록
-        each_image_duration = 3*10 + int(image[1])
-        for _ in range(each_image_duration):
+        each_image_duration = int(2*fps) + int(image[1]*(fps/10))
+
+        for k in range(each_image_duration):
+        #   if cols < hei:
+        #       nx = int((hei-720 / each_image_duration) * k)
+
+        #       back_image[:, space_width:space_width + rows] = result[nx:nx+720,:]
+        #       video.write(back_image)
+        #   else:
+        #       space_height = int((height - cols) / 2)
+        #       back_image[space_height:space_height + cols, space_width:space_width + rows] = result
+        #       video.write(back_image)
+
             video.write(image[0])
+
+        #영상 전환 효과
+        if i+1 < len(image_list):
+            # #잘리면서 그림 바뀜
+            # for j in range(1, int(fps+1)):
+            #     dx = int((width / fps) * j)
+            #     frame = np.zeros((height, width, 3), dtype=np.uint8)
+            #     frame[:, 0:dx, :] = image[0][:, width-dx:width, :]
+            #     frame[:, dx:width, :] = image_list[i+1][0][:, 0:width-dx, :]
+            #     video.write(frame)
+            #디졸브 효과
+            for j in range(1, int(fps+1)):
+                alpha = j / fps
+                frame = cv2.addWeighted(image[0], 1 - alpha, image_list[i+1][0], alpha, 0)
+                video.write(frame)
 
     # 객체를 반드시 종료시켜주어야 한다
     video.release()
-    # 모든 화면 종료해준다.
-    #cv2.destroyAllWindows()
 
     # 영상 저장 위치 반환
     return video_name
-
-# #[이미지,글자수]의 리스트를 받아 영상으로 만들고 저장하는 함수
-# def view_seconds(image_list):
-#     #video codec 설정
-#     fourcc = cv2.VideoWriter_fourcc(*'H264')
-#
-#     #현재 영상 프레임을 첫번째이미지로 설정(변경가능)
-#     frame = image_list[0][0]
-#     height, width, layers = frame.shape
-#
-#     video_list = []
-#     #리스트에서 한 cut씩 가져옮
-#     for i, image in enumerate(image_list):
-#         # 영상 저장 위치 설정
-#         video_name = 'ani/ani_cut/' + str(i) + '.mp4'
-#         out_path = 'media/' + video_name
-#         # video작성부분(저장위치, codec, fps, 영상프레임)
-#         video = cv2.VideoWriter(out_path, fourcc, 10.0, (width, height))
-#         #기본 5초에 이미지의 글자수를 10으로 나눈만큼 반복하여 같은 이미지 기록
-#         each_image_duration = 4*10 + int(image[1])
-#         for _ in range(each_image_duration):
-#             video.write(image[0])
-#         video.release()
-#         video_list.append(str(out_path))
-#
-#     return video_list
-
-#
-# def effect_video(video_list):
-#     print(video_list)
-#
-#     video_name = 'ani/animate.mp4'
-#     out_path = 'media/' + video_name
-#
-#     for i in range(1, len(video_list)):
-#         if i <= 1:
-#             print(i)
-#             cap1 = cv2.VideoCapture(video_list[i-1])
-#         else:
-#             print(out_path)
-#             cap1 = cv2.VideoCapture(out_path)
-#         cap2 = cv2.VideoCapture(video_list[i])
-#
-#         if not cap1.isOpened() or not cap2.isOpened():
-#             print('video open failed!')
-#             sys.exit()
-#
-#         print(cap1)
-#         print(cap2)
-#         # 두 동영상의 크기, FPS는 같다고 가정
-#         frame_cnt1 = round(cap1.get(cv2.CAP_PROP_FRAME_COUNT))
-#         frame_cnt2 = round(cap2.get(cv2.CAP_PROP_FRAME_COUNT))
-#         fps = cap1.get(cv2.CAP_PROP_FPS)
-#         effect_frames = int(fps * 1)  # 전환 속도를 결정
-#
-#         print('frame_cnt1:', frame_cnt1)
-#         print('frame_cnt2:', frame_cnt2)
-#         print('FPS:', fps)
-#
-#         #delay = int(1000 / fps)
-#
-#         w = round(cap1.get(cv2.CAP_PROP_FRAME_WIDTH))
-#         h = round(cap1.get(cv2.CAP_PROP_FRAME_HEIGHT))
-#         fourcc = cv2.VideoWriter_fourcc(*'H264')
-#
-#         # 출력 동영상 객체 생성
-#         out = cv2.VideoWriter(out_path, fourcc, fps, (w, h))
-#
-#         # 1번 동영상
-#         for y in range(frame_cnt1 - effect_frames):
-#             ret1, frame1 = cap1.read()
-#
-#             if not ret1:
-#                 break
-#
-#             out.write(frame1)
-#             #cv2.imshow('frame', frame1)
-#             #cv2.waitKey(delay)
-#
-#         # 합성 과정
-#         for k in range(effect_frames):
-#             ret1, frame1 = cap1.read()
-#             ret2, frame2 = cap2.read()
-#
-#             if not ret1 or not ret2:
-#                 print(ret1)
-#                 print(ret2)
-#                 print('frame read error!')
-#                 sys.exit()
-#
-#             dx = int(w / effect_frames * k)
-#             # frame_new = np.zeros((h, w, 3), dtype=np.uint8)
-#             # frame_new[:, 0:dx, :] = frame2[:, 0:dx, :]  # 2번 동영상 먼저 등장
-#             # frame_new[:, dx:w, :] = frame1[:, dx:w, :]  # 1번 동영상 점차 사라짐
-#
-#             # 디졸브 효과
-#             # 과중치를 이용. cv2.addWeighted 함수 이용하면 된다.
-#             alpha = i / effect_frames
-#             frame_new = cv2.addWeighted(frame1, 1 - alpha, frame2, alpha, 0)
-#
-#             out.write(frame_new)
-#             #cv2.imshow('frame', frame_new)
-#             #cv2.waitKey(delay)
-#
-#         # 2번 동영상
-#         for j in range(effect_frames, frame_cnt2):
-#             ret2, frame2 = cap2.read()
-#
-#             if not ret2:
-#                 break
-#
-#             out.write(frame2)
-#             #cv2.imshow('frame', frame2)
-#             #cv2.waitKey(delay)
-#
-#         cap1.release()
-#         cap2.release()
-#         out.release()
-#
-#         os.remove(video_list[i])
-#     os.remove(video_list[0])
-#
-#     return video_name

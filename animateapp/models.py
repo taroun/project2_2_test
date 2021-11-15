@@ -20,5 +20,6 @@ class Animate(models.Model):
 class AnimateImage(models.Model):
     animate = models.ForeignKey(Animate, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='ani_image/', null=True)
+    image_base64 = models.TextField(null=True, blank=True)
 
 
