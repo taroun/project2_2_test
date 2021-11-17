@@ -7,8 +7,8 @@
     <div id="loading">
         <img src="{% static 'mainimage/loading.gif' %}" alt="loading">
     </div>
-    <div class="text-center mw-500 m-auto">
-        <div class="m-5">
+    <div class="mw-600 m-auto">
+        <div class="text-center m-5">
             <h2>만화, 웹툰 영상화</h2>
         </div>
         <div>
@@ -17,9 +17,11 @@
                   method="post" id="next">
                 {% csrf_token %}
                 {% bootstrap_form form layout='horizontal'%}
-                <p>* 이미지이름 순서대로 영상이 제작됩니다.</p>
-                <p>* 이미지이름을 순서에 맞춰 숫자로 기록해주세요.</p>
-                <div class="m-5">
+                <div class="text-center">
+                    <p>* 이미지이름 순서대로 영상이 제작됩니다.</p>
+                    <p>* 이미지이름을 순서에 맞춰 숫자로 기록해주세요.</p>
+                </div>
+                <div class="text-center m-5">
                     <input type="submit" class="btn btn-dark rounded-pill px-5">
                 </div>
 

@@ -24,6 +24,10 @@ pip install tensorflow-gpu
 
 conda install pytorch torchvision cudatoolkit=11.3.1 -c pytorch
 
+pip install opencv-contrib-python
+
+pip install --upgrade django-crispy-forms
+
 설치
 
 media 폴더에 ani 폴더 생성해주기

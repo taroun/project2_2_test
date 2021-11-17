@@ -1,6 +1,10 @@
-.mw-500{
-    max-width: 500px;
+.mw-600{
+    max-width: 600px;
     margin: 1rem 1.5rem;
+}
+
+.form-group {
+	margin: 1rem
 }
 
 #loading {
