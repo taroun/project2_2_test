@@ -30,5 +30,9 @@ class AnimateImage(models.Model):
     animate = models.ForeignKey(Animate, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='ani_image/', null=True)
     image_base64 = models.TextField(null=True, blank=True)
+    left_right = models.CharField(max_length=5, default='L')
+    toon_comic = models.CharField(max_length=5, default='T')
+    ani_effect = models.CharField(max_length=5, default='N')
+    transition_effect = models.CharField(max_length=5, default='N')
 
 
