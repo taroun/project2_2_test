@@ -33,6 +33,11 @@
         $(document).ready(function() {
             $('#loading').hide();
             $('#next').submit(function(){
+                var fileCheck = document.getElementById("files").value;
+                if(!fileCheck){
+                    alert("파일을 첨부해 주세요");
+                    return false;
+                }
                 $('#loading').show();
                 return true;
             });
@@ -41,7 +46,7 @@
 
         function handleFileSelect(evt) {
             const files = evt.target.files;
-
+            $('#list').empty()
             // Loop through the FileList and render image files as thumbnails.
             for (var i = 0, f; f = files[i]; i++) {
 
@@ -64,7 +69,6 @@
                             '" title="', escape(theFile.name),
                             '"/>',
                         ].join('');
-
                     document.getElementById('list').insertBefore(span, null);
                     };
                 })(f);
