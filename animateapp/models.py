@@ -8,7 +8,7 @@ class Animate(models.Model):
     left_right_choice = (('L', '좌->우'), ('R', '우->좌'))
     left_right = models.CharField(max_length=5, choices=left_right_choice, default='L')
     # 웹툰형식인지 만화책형식인지 결정
-    toon_comic_choice = (('T', '웹툰 형식'), ('C', '만화책형식'))
+    toon_comic_choice = (('T', '컷 형식'), ('C', '만화책 형식'))
     toon_comic = models.CharField(max_length=5, choices=toon_comic_choice, default='T')
     # 영상 효과 결정
     ani_effect_choice = (('B', '말풍선'), ('N', '없음'))

@@ -12,6 +12,8 @@ pip install django-bootstrap4
 
 pip install opencv-python
 
+pip install scikit-learn
+
 conda install cudatoolkit
 
 conda install cudnn
